@@ -1,0 +1,15 @@
+# Pointer Activity Monitoring Service Requirements
+# Created by: Prof. Shahab Anbarjafari from 3S Holding OÜ, Tartu Estonia
+
+# Core dependencies
+pynput>=1.7.6          # Mouse and keyboard input monitoring
+matplotlib>=3.7.0      # Plotting and visualization
+seaborn>=0.12.0        # Statistical data visualization
+numpy>=1.24.0          # Numerical computing
+screeninfo>=0.8.1      # Screen information detection
+
+# GUI Framework (usually included with Python)
+# tkinter - included with Python standard library
+
+# Optional dependencies for enhanced functionality
+Pillow>=9.5.0          # Image processing (for saving heatmaps in different formats)
