@@ -31,10 +31,20 @@ class PointerActivityMonitor:
         self.data_file = "pointer_data.json"
         self.listener = None
         
-        # Get screen dimensions
+        # Get screen dimensions - handle dual monitor coordinate system
         self.screens = screeninfo.get_monitors()
-        self.screen_width = max(screen.x + screen.width for screen in self.screens)
-        self.screen_height = max(screen.y + screen.height for screen in self.screens)
+        
+        # For the corrected coordinate system:
+        # Monitor 1 (main): X(0 to 1512), Y(0 to 982) - after abs() conversion
+        # Monitor 2 (extended): X(-217 to 1703), Y(982 to 2062) - as is
+        self.min_x = min(screen.x for screen in self.screens)
+        self.max_x = max(screen.x + screen.width for screen in self.screens)
+        self.min_y = 0  # Start from 0 since we convert negative Y to absolute
+        self.max_y = max(screen.y + screen.height for screen in self.screens)
+        
+        # Total screen area
+        self.screen_width = self.max_x - self.min_x
+        self.screen_height = self.max_y - self.min_y
         
         # Initialize UI
         self.setup_ui()
@@ -174,13 +184,37 @@ class PointerActivityMonitor:
             messagebox.showwarning("No Data", "No pointer data available. Please start monitoring first.")
             return None
             
-        # Extract coordinates
-        x_coords = [point['x'] for point in self.pointer_data]
-        y_coords = [point['y'] for point in self.pointer_data]
+        # Extract coordinates and fix coordinate mapping for proper top-to-bottom orientation
+        # Monitor 1 (main): negative Y values -> convert to absolute values (0 to 982) top-to-bottom
+        # Monitor 2 (extended): positive Y values (982 to 2062) -> keep as is, top-to-bottom
+        x_coords = []
+        y_coords = []
         
-        # Create bins for heatmap (adjust resolution as needed)
-        x_bins = np.linspace(0, self.screen_width, 100)
-        y_bins = np.linspace(0, self.screen_height, 100)
+        for point in self.pointer_data:
+            x = point['x']
+            y = point['y']
+            
+            # Fix Y coordinate mapping for proper top-to-bottom orientation
+            if y < 0:
+                # Monitor 1 (main monitor): negative Y values
+                # Convert negative Y to positive and map to Monitor 1 coordinates (0 to 982)
+                # Small negative Y (like -21) should be near top of Monitor 1 (near 0)
+                # Large negative Y (like -590) should be near bottom of Monitor 1 (near 982)
+                y = abs(y)  # Convert to positive
+                # Now y ranges from 0 to ~1080, map to 0 to 982 range for Monitor 1
+                # Keep the natural top-to-bottom orientation
+            else:
+                # Monitor 2 coordinates: positive Y values (982 to 2062)
+                # These are already in the correct coordinate system
+                # 982 = top of Monitor 2, 2062 = bottom of Monitor 2
+                pass
+            
+            x_coords.append(x)
+            y_coords.append(y)
+        
+        # Create bins for heatmap using actual screen bounds (including negative coordinates)
+        x_bins = np.linspace(self.min_x, self.max_x, 120)  # Higher resolution for dual monitors
+        y_bins = np.linspace(self.min_y, self.max_y, 120)
         
         # Create 2D histogram
         heatmap_data, x_edges, y_edges = np.histogram2d(x_coords, y_coords, bins=[x_bins, y_bins])
@@ -190,11 +224,11 @@ class PointerActivityMonitor:
         fig, ax = plt.subplots(figsize=(14, 10))
         fig.patch.set_facecolor('black')
         
-        # Create heatmap with enhanced visual appeal
+        # Create heatmap with enhanced visual appeal using actual screen coordinates
         im = ax.imshow(
             heatmap_data.T, 
             origin='lower',
-            extent=[0, self.screen_width, 0, self.screen_height],
+            extent=[self.min_x, self.max_x, self.min_y, self.max_y],
             cmap='plasma',  # More vibrant colormap
             interpolation='gaussian',
             alpha=0.8
@@ -214,19 +248,44 @@ class PointerActivityMonitor:
         # Add grid
         ax.grid(True, alpha=0.3)
         
-        # Add screen boundaries if multiple screens
-        if len(self.screens) > 1:
-            for screen in self.screens:
-                rect = plt.Rectangle(
-                    (screen.x, screen.y), 
-                    screen.width, 
-                    screen.height,
-                    fill=False, 
-                    edgecolor='white', 
-                    linewidth=2,
-                    linestyle='--'
-                )
-                ax.add_patch(rect)
+        # Add screen boundaries for all monitors with corrected coordinates
+        for i, screen in enumerate(self.screens):
+            # Correct the Y coordinates for visualization
+            if screen.y < 0:
+                # Monitor 1 (main): Y coordinate should be 0 to 982
+                rect_y = 0
+                rect_height = screen.height
+                label_y = rect_height // 2
+            else:
+                # Monitor 2 (extended): Keep original coordinates
+                rect_y = screen.y
+                rect_height = screen.height
+                label_y = screen.y + screen.height // 2
+            
+            rect = plt.Rectangle(
+                (screen.x, rect_y), 
+                screen.width, 
+                rect_height,
+                fill=False, 
+                edgecolor='cyan', 
+                linewidth=3,
+                linestyle='-',
+                alpha=0.8
+            )
+            ax.add_patch(rect)
+            
+            # Add screen labels
+            label_x = screen.x + screen.width // 2
+            ax.text(
+                label_x, label_y, 
+                f'Monitor {i+1}\n{screen.width}×{screen.height}',
+                color='cyan',
+                fontsize=12,
+                fontweight='bold',
+                ha='center',
+                va='center',
+                bbox=dict(boxstyle='round,pad=0.5', facecolor='black', alpha=0.7)
+            )
         
         plt.tight_layout()
         return fig
@@ -304,10 +363,11 @@ class PointerActivityMonitor:
         )
         close_btn.pack(side=tk.LEFT, padx=5, pady=5)
         
-        # Add statistics with better formatting
+        # Add statistics with better formatting including coordinate ranges
         stats_text = f"📊 Total Points: {len(self.pointer_data):,} | " \
-                    f"🖥️ Resolution: {self.screen_width}x{self.screen_height} | " \
-                    f"📺 Screens: {len(self.screens)}"
+                    f"🖥️ Total Area: {self.screen_width}x{self.screen_height} | " \
+                    f"📺 Screens: {len(self.screens)} | " \
+                    f"📍 Range: X({self.min_x} to {self.max_x}), Y({self.min_y} to {self.max_y})"
         
         stats_label = tk.Label(
             toolbar_frame, 
@@ -344,8 +404,11 @@ class PointerActivityMonitor:
     def run(self):
         """Start the application"""
         print("Pointer Activity Monitor started")
-        print(f"Screen dimensions: {self.screen_width}x{self.screen_height}")
+        print(f"Total screen area: {self.screen_width}x{self.screen_height}")
+        print(f"Coordinate bounds: X({self.min_x} to {self.max_x}), Y({self.min_y} to {self.max_y})")
         print(f"Number of screens: {len(self.screens)}")
+        for i, screen in enumerate(self.screens):
+            print(f"  Screen {i+1}: {screen.width}x{screen.height} at ({screen.x}, {screen.y})")
         self.root.mainloop()
 
 
