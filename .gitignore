@@ -4,6 +4,8 @@ venv/
 env/
 .venv/
 
+test_ui.py
+
 # Data files
 pointer_data.json
 
@@ -12,36 +14,3 @@ pointer_heatmap_*.png
 
 # Python cache
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
-
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# IDE files
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS files
-.DS_Store
-Thumbs.db
