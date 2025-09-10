@@ -23,13 +23,13 @@ For immediate usage:
 cd pointer-activity-monitoring
 
 # Install dependencies
-pip install -r requirements.txt
+pip3 install -r requirements.txt
 
 # Test installation
-python test_installation.py
+python3 test_installation.py
 
 # Run the application
-python run.py
+python3 run.py
 ```
 
 ## Installation
@@ -54,7 +54,7 @@ python run.py
 
 3. **Install dependencies**:
    ```bash
-   pip install -r requirements.txt
+   pip3 install -r requirements.txt
    ```
 
 ### Platform-Specific Notes
@@ -79,7 +79,7 @@ All dependencies should work out of the box. No additional setup required.
 ### Starting the Application
 
 ```bash
-python pointer_monitor.py
+python3 pointer_monitor.py
 ```
 
 ### User Interface

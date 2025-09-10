@@ -46,8 +46,10 @@ class PointerActivityMonitor:
         self.root.geometry("180x120")
         self.root.resizable(False, False)
         
-        # Position window at top-right corner
-        self.root.geometry(f"180x120+{self.screen_width-200}+20")
+        # Position window at center of the screen for better visibility
+        center_x = (self.screen_width - 180) // 2  # Horizontally centered
+        center_y = (self.screen_height - 120) // 4  # Upper-center vertically
+        self.root.geometry(f"180x120+{center_x}+{center_y}")
         
         # Make window always on top
         self.root.attributes('-topmost', True)

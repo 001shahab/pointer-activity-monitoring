@@ -72,8 +72,9 @@ def main():
         # Import and run the main application
         from pointer_monitor import main as run_monitor
         run_monitor()
-    except ImportError:
-        print("❌ Error: pointer_monitor.py not found in current directory")
+    except ImportError as e:
+        print(f"❌ Error: Failed to import pointer_monitor.py - {e}")
+        print("Make sure you're running from the correct directory.")
         return 1
     except KeyboardInterrupt:
         print("\n\n👋 Application stopped by user")
