@@ -16,14 +16,14 @@ def test_ui():
     # Create root window
     root = tk.Tk()
     root.title("Pointer Monitor - UI Test")
-    root.geometry("180x120")
+    root.geometry("180x150")  # Increased height to fit all buttons
     root.resizable(False, False)
     
     # Position window at center of the screen for better visibility  
     screen_height = max(screen.y + screen.height for screen in screens)
     center_x = (screen_width - 180) // 2  # Horizontally centered
-    center_y = (screen_height - 120) // 4  # Upper-center vertically
-    root.geometry(f"180x120+{center_x}+{center_y}")
+    center_y = (screen_height - 150) // 4  # Upper-center vertically
+    root.geometry(f"180x150+{center_x}+{center_y}")
     
     # Make window always on top
     root.attributes('-topmost', True)

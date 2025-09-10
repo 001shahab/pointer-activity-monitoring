@@ -5,6 +5,9 @@ env/
 .venv/
 
 test_ui.py
+test_visualization.py
+create_sample_data.py
+test_view_button.py
 
 # Data files
 pointer_data.json

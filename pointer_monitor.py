@@ -43,13 +43,13 @@ class PointerActivityMonitor:
         """Setup the small corner UI interface"""
         self.root = tk.Tk()
         self.root.title("Pointer Monitor")
-        self.root.geometry("180x120")
+        self.root.geometry("180x150")  # Increased height to fit all buttons
         self.root.resizable(False, False)
         
         # Position window at center of the screen for better visibility
         center_x = (self.screen_width - 180) // 2  # Horizontally centered
-        center_y = (self.screen_height - 120) // 4  # Upper-center vertically
-        self.root.geometry(f"180x120+{center_x}+{center_y}")
+        center_y = (self.screen_height - 150) // 4  # Upper-center vertically
+        self.root.geometry(f"180x150+{center_x}+{center_y}")
         
         # Make window always on top
         self.root.attributes('-topmost', True)
@@ -185,27 +185,31 @@ class PointerActivityMonitor:
         # Create 2D histogram
         heatmap_data, x_edges, y_edges = np.histogram2d(x_coords, y_coords, bins=[x_bins, y_bins])
         
-        # Create figure
-        fig, ax = plt.subplots(figsize=(12, 8))
+        # Create figure with dark background for better contrast
+        plt.style.use('dark_background')
+        fig, ax = plt.subplots(figsize=(14, 10))
+        fig.patch.set_facecolor('black')
         
-        # Create heatmap
+        # Create heatmap with enhanced visual appeal
         im = ax.imshow(
             heatmap_data.T, 
             origin='lower',
             extent=[0, self.screen_width, 0, self.screen_height],
-            cmap='hot',
-            interpolation='gaussian'
+            cmap='plasma',  # More vibrant colormap
+            interpolation='gaussian',
+            alpha=0.8
         )
         
-        # Customize plot
-        ax.set_title(f'Pointer Activity Heatmap\n{len(self.pointer_data)} data points collected', 
-                    fontsize=14, fontweight='bold')
-        ax.set_xlabel('Screen X Coordinate (pixels)', fontsize=12)
-        ax.set_ylabel('Screen Y Coordinate (pixels)', fontsize=12)
+        # Customize plot with beautiful styling
+        ax.set_title(f'🔥 Pointer Activity Heatmap 🔥\n{len(self.pointer_data):,} data points collected\nCreated by Prof. Shahab Anbarjafari - 3S Holding OÜ', 
+                    fontsize=16, fontweight='bold', color='white', pad=20)
+        ax.set_xlabel('Screen X Coordinate (pixels)', fontsize=12, color='white')
+        ax.set_ylabel('Screen Y Coordinate (pixels)', fontsize=12, color='white')
         
-        # Add colorbar
-        cbar = plt.colorbar(im, ax=ax)
-        cbar.set_label('Activity Density', fontsize=12)
+        # Add colorbar with styling
+        cbar = plt.colorbar(im, ax=ax, shrink=0.8)
+        cbar.set_label('Activity Density', fontsize=12, color='white')
+        cbar.ax.tick_params(colors='white')
         
         # Add grid
         ax.grid(True, alpha=0.3)
@@ -229,46 +233,89 @@ class PointerActivityMonitor:
         
     def show_visualization(self):
         """Show heatmap visualization in a new window"""
+        # Stop monitoring if currently active
+        if self.is_monitoring:
+            self.stop_monitoring()
+            print("Monitoring stopped to show visualization")
+        
         fig = self.create_heatmap()
         if fig is None:
             return
             
-        # Create visualization window
+        # Create visualization window with better sizing
         viz_window = tk.Toplevel(self.root)
-        viz_window.title("Pointer Activity Heatmap")
-        viz_window.geometry("1000x700")
+        viz_window.title("🔥 Pointer Activity Heatmap - Prof. Shahab Anbarjafari")
+        
+        # Make it larger and center it
+        window_width = 1200
+        window_height = 800
+        screen_center_x = (self.screen_width - window_width) // 2
+        screen_center_y = (self.screen_height - window_height) // 2
+        viz_window.geometry(f"{window_width}x{window_height}+{screen_center_x}+{screen_center_y}")
+        
+        # Configure window
+        viz_window.configure(bg='black')
         
         # Add canvas
         canvas = FigureCanvasTkAgg(fig, viz_window)
         canvas.draw()
         canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
         
-        # Add toolbar frame
-        toolbar_frame = ttk.Frame(viz_window)
-        toolbar_frame.pack(fill=tk.X)
+        # Add toolbar frame with dark styling
+        toolbar_frame = tk.Frame(viz_window, bg='black', height=50)
+        toolbar_frame.pack(fill=tk.X, padx=10, pady=5)
         
-        # Add save button
-        save_btn = ttk.Button(
+        # Add save button with enhanced styling
+        save_btn = tk.Button(
             toolbar_frame,
-            text="Save Heatmap",
-            command=lambda: self.save_heatmap(fig)
+            text="💾 Save Heatmap",
+            command=lambda: self.save_heatmap(fig),
+            bg='#4CAF50',
+            fg='white',
+            font=('Arial', 10, 'bold'),
+            padx=15,
+            pady=5
         )
         save_btn.pack(side=tk.LEFT, padx=5, pady=5)
         
-        # Add clear data button
-        clear_btn = ttk.Button(
+        # Add clear data button with enhanced styling
+        clear_btn = tk.Button(
             toolbar_frame,
-            text="Clear Data",
-            command=self.clear_data
+            text="🗑️ Clear Data",
+            command=self.clear_data,
+            bg='#f44336',
+            fg='white',
+            font=('Arial', 10, 'bold'),
+            padx=15,
+            pady=5
         )
         clear_btn.pack(side=tk.LEFT, padx=5, pady=5)
         
-        # Add statistics
-        stats_text = f"Total Points: {len(self.pointer_data)} | " \
-                    f"Screen Resolution: {self.screen_width}x{self.screen_height} | " \
-                    f"Screens: {len(self.screens)}"
+        # Add close button
+        close_btn = tk.Button(
+            toolbar_frame,
+            text="❌ Close",
+            command=viz_window.destroy,
+            bg='#2196F3',
+            fg='white',
+            font=('Arial', 10, 'bold'),
+            padx=15,
+            pady=5
+        )
+        close_btn.pack(side=tk.LEFT, padx=5, pady=5)
         
-        stats_label = ttk.Label(toolbar_frame, text=stats_text)
+        # Add statistics with better formatting
+        stats_text = f"📊 Total Points: {len(self.pointer_data):,} | " \
+                    f"🖥️ Resolution: {self.screen_width}x{self.screen_height} | " \
+                    f"📺 Screens: {len(self.screens)}"
+        
+        stats_label = tk.Label(
+            toolbar_frame, 
+            text=stats_text,
+            bg='black',
+            fg='white',
+            font=('Arial', 10)
+        )
         stats_label.pack(side=tk.RIGHT, padx=5, pady=5)
         
     def save_heatmap(self, fig):
